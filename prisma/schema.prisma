@@ -1,0 +1,153 @@
+// Prisma Schema for SOE-DQPS University Exam Paper Portal
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  STUDENT
+}
+
+enum ViolationType {
+  DEVTOOLS_OPEN
+  TAB_SWITCH
+  FULLSCREEN_EXIT
+  PRINT_ATTEMPT
+  COPY_ATTEMPT
+  RIGHT_CLICK
+  SHORTCUT_BLOCKED
+  WINDOW_BLUR
+}
+
+enum LogAction {
+  VIEW
+  OPEN
+  CLOSE
+  DOWNLOAD_ATTEMPT
+}
+
+model User {
+  id               String       @id @default(cuid())
+  role             Role         @default(STUDENT)
+  name             String
+  email            String       @unique
+  rollNo           String?      @unique
+  department       String?
+  semester         String?
+  isActive         Boolean      @default(true)
+  passwordHash     String?
+  mustChangePassword Boolean    @default(false)
+  dailyViewCount   Int          @default(0)
+  lastViewDate     DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  sessions      Session[]
+  assignments   Assignment[]
+  accessLogs    AccessLog[]
+  violationLogs ViolationLog[]
+
+  @@index([email])
+  @@index([rollNo])
+  @@index([role])
+}
+
+model Paper {
+  id         String   @id @default(cuid())
+  paperCode  String   @unique
+  paperName  String?
+  fileUrl    String
+  publicId   String   // Cloudinary public_id for deletion
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  assignments   Assignment[]
+  accessLogs    AccessLog[]
+  violationLogs ViolationLog[]
+
+  @@index([paperCode])
+}
+
+model Assignment {
+  id         String   @id @default(cuid())
+  studentId  String
+  paperId    String
+  assignedAt DateTime @default(now())
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  paper   Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, paperId])
+  @@index([studentId])
+  @@index([paperId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  userId       String
+  token        String   @unique
+  refreshToken String   @unique
+  expiresAt    DateTime
+  ipAddress    String?
+  userAgent    String?
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([token])
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([code])
+}
+
+model AccessLog {
+  id        String    @id @default(cuid())
+  studentId String
+  paperId   String
+  action    LogAction
+  duration  Int?      // seconds
+  ipAddress String?
+  userAgent String?
+  timestamp DateTime  @default(now())
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  paper   Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([paperId])
+  @@index([timestamp])
+}
+
+model ViolationLog {
+  id            String        @id @default(cuid())
+  studentId     String
+  paperId       String
+  violationType ViolationType
+  metadata      String?       // JSON string for additional context
+  timestamp     DateTime      @default(now())
+
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  paper   Paper @relation(fields: [paperId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([paperId])
+  @@index([violationType])
+  @@index([timestamp])
+}
