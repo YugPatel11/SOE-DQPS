@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { verifyAccessToken, verifyRefreshToken, createAccessToken } from '@/lib/auth';
 
 // Routes that don't require authentication
-const publicRoutes = ['/login', '/verify', '/api/auth/login', '/api/auth/verify'];
+const publicRoutes = ['/login', '/api/auth/google', '/api/auth/google/callback'];
 const publicPathPrefixes = ['/api/auth/', '/_next/', '/favicon.ico'];
 
 export async function middleware(request: NextRequest) {

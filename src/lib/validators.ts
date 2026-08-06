@@ -9,17 +9,6 @@ export const emailDomainSchema = z.string().email('Invalid email address').refin
   { message: 'Email must belong to the university domain' }
 );
 
-// Login schema
-export const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-});
-
-// OTP verification schema
-export const verifyOtpSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  code: z.string().length(6, 'OTP must be 6 digits'),
-});
-
 // Paper upload schema
 export const paperUploadSchema = z.object({
   paperCode: z.string().min(1, 'Paper code is required').max(50, 'Paper code too long'),

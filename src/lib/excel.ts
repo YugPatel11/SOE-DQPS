@@ -35,7 +35,7 @@ export interface ParseResult<T> {
  */
 export async function parseStudentExcel(buffer: Buffer): Promise<ParseResult<StudentRow>> {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
 
   const worksheet = workbook.getWorksheet(1);
   if (!worksheet) {
@@ -141,7 +141,7 @@ export async function parseStudentExcel(buffer: Buffer): Promise<ParseResult<Stu
  */
 export async function parseAssignmentExcel(buffer: Buffer): Promise<ParseResult<AssignmentRow>> {
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(buffer);
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer);
 
   const worksheet = workbook.getWorksheet(1);
   if (!worksheet) {

@@ -1,5 +1,6 @@
-// In-memory rate limiter for serverless (Vercel) environments
-// For 5000+ users at scale, consider using Upstash Redis rate limiting
+// Serverless-safe rate limiter
+// In-memory store — resets per cold start (acceptable for basic protection)
+// For production scale, consider Upstash Redis rate limiting
 
 interface RateLimitEntry {
   count: number;
@@ -8,15 +9,18 @@ interface RateLimitEntry {
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
 
-// Cleanup old entries every 5 minutes
-setInterval(() => {
+// Inline cleanup instead of setInterval (serverless has no persistent process)
+function cleanupExpired() {
   const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (entry.resetAt < now) {
-      rateLimitStore.delete(key);
+  // Only clean up if store grows large to avoid overhead on every call
+  if (rateLimitStore.size > 1000) {
+    for (const [key, entry] of rateLimitStore.entries()) {
+      if (entry.resetAt < now) {
+        rateLimitStore.delete(key);
+      }
     }
   }
-}, 5 * 60 * 1000);
+}
 
 interface RateLimitConfig {
   windowMs: number;   // Time window in milliseconds
@@ -33,6 +37,8 @@ export function rateLimit(
   key: string,
   config: RateLimitConfig = { windowMs: 60 * 1000, maxRequests: 5 }
 ): RateLimitResult {
+  cleanupExpired();
+
   const now = Date.now();
   const entry = rateLimitStore.get(key);
 
